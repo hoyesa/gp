@@ -26,13 +26,28 @@ class node():
             print("hello")
         return self.kern.run(args)
 
+def getRandListItem(lst):
+    return randrange(len(lst))
+
 def buildNodeTree(kernList):
-    kern = kernList[randrange(len(kernList))]
     nodeList = []
-    if kern.arity > 0:
-        for branch in range(kern.arity):
-            nodeList.append(buildNodeTree(kernList))
-    return node(kern,nodeList)
+    stack = []
+    kern = kernList[0]  # take the first item = this controls the root kernel
+    nodeList.append(kern)
+    argIndex = 1
+    while len(stack) > 0 or kern.arity > argIndex:
+        newKern = getRandListItem(kernList)
+        nodeList.append(newKern)
+        if newKern.Arity > 0:
+            stack.push([kern,argIndex])
+            kern = newKern
+            argIndex = 1
+        else:
+            argIndex += 1
+            if argIndex > kern.Arity:
+                kern,argIndex = stack.pop()
+                argIndex += 1
+    return nodeList
 
 
 
@@ -44,7 +59,7 @@ c4   = kernel(0,'4', lambda x:4.0)
 
 kernList = [mult,add,sub,pi,c4]
 
-treeList = [buildNodeTree(kernList).calc() for i in range(10)]
+test = buildNodeTree(kernList)
 
 piNode1 = node(pi)
 piNode2 = node(pi)
