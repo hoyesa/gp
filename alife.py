@@ -39,6 +39,8 @@ def stateMachine(isOp,isStack,isLastBranch):
     return int(isLastBranch)+2*int(isStack)+4*int(isOp)
 
 def spanNodeTree(nodeTree):
+    if nodeTree[0].arity == 0:
+        return nodeTree[0].run([])
     nodeIdx = 1
     curOp = nodeTree[0]  # take the first item = this controls the root kernel
     argIndex = 1
@@ -127,14 +129,22 @@ sqrt = kernel(1,'sqrt',lambda xy:math.sqrt(abs(xy[0])))
 ifgt = kernel(4,'if_gt',lambda xy:xy[2] if xy[0] > xy[1] else xy[3])
 ifle = kernel(4,'if_le',lambda xy:xy[2] if xy[0] <= xy[1] else xy[3])
 pi   = kernel(0,'pi',lambda x:3.141592 )
-c4   = kernel(0,'4', lambda x:4.0)
+c4   = kernel(0,'4', lambda x:-4.0)
+exp  = kernel(1,'exp',lambda x: math.exp(34.0) if x[0] > 34.0 else math.exp(x[0]))
+ln   = kernel(1,'ln', lambda x: 0 if x[0] <= 0.0 else math.log(x[0]))
+sin  = kernel(1,'sin',lambda x:math.sin(x[0]))
+cos  = kernel(1,'cos',lambda x:math.cos(x[0]))
 
-kernList = [mult,div,add,sub,sqr,sqrt,ifgt,ifle,pi,c4]
+kernList = [mult,div,add,sub,sqr,sqrt,ifgt,ifle,pi,c4,exp,ln,sin,cos]
 
-testTree = [mult,add,c4,pi,sub,c4,pi]
+popSize = 500
+maxLevs = 7
+target = 3.0
 
-population = [buildNodeTree(kernList,3) for i in range(50)]
+population = [buildNodeTree(kernList,maxLevs) for i in range(popSize)]
 
 vals = [spanNodeTree(population[i]) for i in range(len(population))]
+
+fitness = [math.fabs(vals[i]-target) for i in range(len(vals))]
 
 print("finished. . .")

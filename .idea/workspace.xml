@@ -123,7 +123,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/alife.py</url>
-          <line>139</line>
+          <line>149</line>
           <option name="timeStamp" value="19" />
         </line-breakpoint>
       </breakpoints>
