@@ -42,8 +42,8 @@ def spanNodeTree(nodeTree):
     nodeIdx = 1
     curOp = nodeTree[0]  # take the first item = this controls the root kernel
     argIndex = 1
-    stack = []
-    argQueue = deque()
+    opStack = []
+    argStack = []
 
     while True:
         # get the next node in the tree
@@ -51,38 +51,38 @@ def spanNodeTree(nodeTree):
         nodeIdx += 1
 
         # calculate the state of the tree spanner
-        state = stateMachine(curNode.arity>0,len(stack)>0,argIndex==curOp.arity)
+        state = stateMachine(curNode.arity>0,len(opStack)>0,argIndex==curOp.arity)
 
         # current node is an operator
         if 4 <= state <= 7:
-            stack.append((curOp,argIndex))
+            opStack.append((curOp,argIndex))
             argIndex = 1
             curOp = curNode
 
         # current token is terminal but need more to finish
         if state in (0,2):
-            argQueue.append(curNode.run([]))
+            argStack.append(curNode.run([]))
             argIndex += 1
 
         # current token is finishing terminal in top level operator
         if state == 1:
             # push queue; dequeue argList; solve;  RETURN
-            argQueue.append(curNode.run([]))
-            tmpArgList = [argQueue.popleft() for i in range(curOp.arity)]
-            val = curOp.run(tmpArgList)
+            argStack.append(curNode.run([]))
+            tmpArgList = [argStack.pop() for i in range(curOp.arity)]
+            val = curOp.run(tmpArgList[::-1])
             return val
 
         # current token is finishing terminal in a lower level operator
         if state == 3:
             # push queue; dequeue argList; solve; push solution; pop stack; inc Curbranch
-            argQueue.append(curNode.run([]))
+            argStack.append(curNode.run([]))
             while True:
-                tmpArgList = [argQueue.popleft() for i in range(curOp.arity)]
-                val = curOp.run(tmpArgList)
-                if len(stack) == 0:
+                tmpArgList = [argStack.pop() for i in range(curOp.arity)]
+                val = curOp.run(tmpArgList[::-1])
+                if len(opStack) == 0:
                     return val
-                argQueue.append(val)
-                curOp,argIndex = stack.pop()
+                argStack.append(val)
+                curOp,argIndex = opStack.pop()
                 if curOp.arity > argIndex:
                     break
             argIndex += 1  # TODO bug here?
@@ -133,8 +133,8 @@ kernList = [mult,div,add,sub,sqr,sqrt,ifgt,ifle,pi,c4]
 
 testTree = [mult,add,c4,pi,sub,c4,pi]
 
-population = [buildNodeTree(kernList,1) for i in range(1)]
+population = [buildNodeTree(kernList,3) for i in range(50)]
 
-val = spanNodeTree(testTree)
+vals = [spanNodeTree(population[i]) for i in range(len(population))]
 
 print("finished. . .")
