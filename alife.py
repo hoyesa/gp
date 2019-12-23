@@ -1,6 +1,5 @@
 import math
 from random import randrange, randint, uniform
-from collections import deque
 
 
 class kernel():
@@ -20,7 +19,6 @@ class node():
         self.nodeArgList = nodeArgList
 
     def calc(self):
-#        args = [node.calc() for node in self.nodeArgList]
         args = []
         for node in self.nodeArgList:
             args.append(node.calc())
@@ -39,6 +37,11 @@ class Soup():
             self.termList.append(kern)
         else:
             self.opList.append(kern)
+
+    def addRandConst(self,n:int,loLim:float,hiLim:float) -> None:
+        for i in range(n):
+            r = uniform(loLim, hiLim)
+            self.append(kernel(0, str(r), lambda x: r))
 
     def getRandKern(self) -> kernel:
         idx = randint(0,len(self.kernList)-1)
@@ -129,9 +132,7 @@ class Alife():
                     curOp,argIndex = opStack.pop()
                     if curOp.arity > argIndex:
                         break
-                argIndex += 1  # TODO bug here?
-
-
+                argIndex += 1
 
 def getRandListItem(lst):
     return lst[randrange(len(lst))]
@@ -152,7 +153,7 @@ soup.append(kernel(2,'*', lambda xy:xy[0] * xy[1]))
 soup.append(kernel(2,'/', lambda xy: 0 if xy[1] == 0.0 else xy[0]/xy[1]))
 soup.append(kernel(2,'+', lambda xy:xy[0] + xy[1]))
 soup.append(kernel(2,'-', lambda xy:xy[0] - xy[1]))
-soup.append(kernel(1,'^', lambda xy:xy[0]**2))
+soup.append(kernel(1,'sqr', lambda xy:xy[0]**2))
 soup.append(kernel(1,'sqrt',lambda xy:math.sqrt(abs(xy[0]))))
 soup.append(kernel(4,'if_gt',lambda xy:xy[2] if xy[0] > xy[1] else xy[3]))
 soup.append(kernel(4,'if_le',lambda xy:xy[2] if xy[0] <= xy[1] else xy[3]))
@@ -161,13 +162,12 @@ soup.append(kernel(1,'exp',lambda x: math.exp(34.0) if x[0] > 34.0 else math.exp
 soup.append(kernel(1,'ln', lambda x: 0 if x[0] <= 0.0 else math.log(x[0])))
 soup.append(kernel(1,'sin',lambda x:math.sin(x[0])))
 soup.append(kernel(1,'cos',lambda x:math.cos(x[0])))
-for i in range(10):
-    r = uniform(-4.0,4.0)
-    soup.append(kernel(0,str(r),lambda x: r))
+
+soup.addRandConst(10,-4.0,4.0)
 
 popSize = 500
 maxLevs = 7
-target = 3.0
+target  = 3.0
 
 population = [Alife(soup,maxLevs) for i in range(popSize)]
 
