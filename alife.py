@@ -79,9 +79,11 @@ def spanNodeTree(nodeTree):
             while True:
                 tmpArgList = [argQueue.popleft() for i in range(curOp.arity)]
                 val = curOp.run(tmpArgList)
+                if len(stack) == 0:
+                    return val
                 argQueue.append(val)
                 curOp,argIndex = stack.pop()
-                if curOp.arity > argIndex or len(stack) == 0:
+                if curOp.arity > argIndex:
                     break
             argIndex += 1  # TODO bug here?
 
@@ -129,7 +131,7 @@ c4   = kernel(0,'4', lambda x:4.0)
 
 kernList = [mult,div,add,sub,sqr,sqrt,ifgt,ifle,pi,c4]
 
-testTree = [mult,add,c4,pi,c4]
+testTree = [mult,add,c4,pi,sub,c4,pi]
 
 population = [buildNodeTree(kernList,1) for i in range(1)]
 
