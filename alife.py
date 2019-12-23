@@ -31,36 +31,59 @@ def getRandListItem(lst):
     return lst[randrange(len(lst))]
 
 def stateMachine(isOp,isStack,isLastBranch):
+    '''
+    isOp: boolean - current Node is an operator (has arity > 0)
+    isStack: boolean - the operator stack has non-zero length, means that we are not at top level in tree
+    isLastBranch: boolean - is the current argument index the final; means argument looked for is the arity of operator
+    '''
     return int(isLastBranch)+2*int(isStack)+4*int(isOp)
 
 def spanNodeTree(nodeTree):
     nodeIdx = 1
-    kern = nodeTree[0]  # take the first item = this controls the root kernel
+    curOp = nodeTree[0]  # take the first item = this controls the root kernel
     argIndex = 1
-    stack = [(kern,argIndex)]
+    stack = []
     argQueue = deque()
 
-    while len(stack) > 0 or argIndex < kern.arity:
-        newKern = nodeTree[nodeIdx]
+    while True:
+        # get the next node in the tree
+        curNode = nodeTree[nodeIdx]
         nodeIdx += 1
-        if newKern.arity > 0:
+
+        # calculate the state of the tree spanner
+        state = stateMachine(curNode.arity>0,len(stack)>0,argIndex==curOp.arity)
+
+        # current node is an operator
+        if 4 <= state <= 7:
+            stack.append((curOp,argIndex))
             argIndex = 1
-            stack.append((newKern,argIndex))
-            kern = newKern
-        else:   # got a terminal
-            argQueue.append(newKern.run([]))
-            while argIndex >= kern.arity and len(stack) > 0:
-                ## this is a terminal that finished arguments - compute the kernel
-                kern,argIndex = stack.pop()
-                if argIndex == kern.arity:
-                # pop terminals off the queue and compute kernel
-                    tmpArgList = []
-                    for arg in range(kern.arity):
-                        tmpArgList.append(argQueue.popleft())
-                    val = kern.run(tmpArgList)
-                    argQueue.append(val)
+            curOp = curNode
+
+        # current token is terminal but need more to finish
+        if state in (0,2):
+            argQueue.append(curNode.run([]))
             argIndex += 1
-    return val
+
+        # current token is finishing terminal in top level operator
+        if state == 1:
+            # push queue; dequeue argList; solve;  RETURN
+            argQueue.append(curNode.run([]))
+            tmpArgList = [argQueue.popleft() for i in range(curOp.arity)]
+            val = curOp.run(tmpArgList)
+            return val
+
+        # current token is finishing terminal in a lower level operator
+        if state == 3:
+            # push queue; dequeue argList; solve; push solution; pop stack; inc Curbranch
+            argQueue.append(curNode.run([]))
+            while True:
+                tmpArgList = [argQueue.popleft() for i in range(curOp.arity)]
+                val = curOp.run(tmpArgList)
+                argQueue.append(val)
+                curOp,argIndex = stack.pop()
+                if curOp.arity > argIndex or len(stack) == 0:
+                    break
+            argIndex += 1  # TODO bug here?
 
 def buildNodeTree(kernList,maxLevel=2):
     val = None
