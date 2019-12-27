@@ -59,7 +59,7 @@ class Alife():
     def __init__(self, soup: Soup, maxLevel:int=2):
         self.nodeList = []
         stack = []
-        kern = soup.getRandOp()  # take the first item = this controls the root kernel
+        kern = soup.getRandOp()
         self.nodeList.append(kern)
         self.funcString = kern.symbol + '('
         argIndex = 1
@@ -83,9 +83,11 @@ class Alife():
                 self.funcString = self.funcString + ','
         self.funcString = self.funcString.rstrip(',') + ')'
 
-    def spanNodeTree(self) -> float:
+    def spanNodeTree(self,argList) -> float:
+        # check if first node is a terminal and return it
         if self.nodeList[0].arity == 0:
             return self.nodeList[0].run([])
+        argKernList = [kernel(0,'_arg'+str(i),lambda x:argList[i]) for i in range(len(argList))]
         nodeIdx = 1
         curOp = self.nodeList[0]  # take the first item = this controls the root kernel
         argIndex = 1
@@ -96,6 +98,11 @@ class Alife():
             # get the next node in the tree
             curNode = self.nodeList[nodeIdx]
             nodeIdx += 1
+
+            # cuckoos egg: replace arg kernels with argList items
+            if curNode.symbol[0:4] == '_arg':
+                idx = int(curNode.symbol[4:])
+                curNode = argKernList[idx]
 
             # calculate the state of the tree spanner
             state = stateMachine(curNode.arity>0,len(opStack)>0,argIndex==curOp.arity)
@@ -149,19 +156,22 @@ def stateMachine(isOp,isStack,isLastBranch):
 ## primordial soup of kernel operators
 
 soup = Soup()
-soup.append(kernel(2,'*', lambda xy:xy[0] * xy[1]))
+# arguments
+soup.append(kernel(0,'_arg0',lambda x: 0.0))
+
+soup.append(kernel(2,'*', lambda xy: xy[0] * xy[1]))
 soup.append(kernel(2,'/', lambda xy: 0 if xy[1] == 0.0 else xy[0]/xy[1]))
-soup.append(kernel(2,'+', lambda xy:xy[0] + xy[1]))
-soup.append(kernel(2,'-', lambda xy:xy[0] - xy[1]))
-soup.append(kernel(1,'sqr', lambda xy:xy[0]**2))
-soup.append(kernel(1,'sqrt',lambda xy:math.sqrt(abs(xy[0]))))
-soup.append(kernel(4,'if_gt',lambda xy:xy[2] if xy[0] > xy[1] else xy[3]))
-soup.append(kernel(4,'if_le',lambda xy:xy[2] if xy[0] <= xy[1] else xy[3]))
-soup.append(kernel(0,'pi',lambda x:3.141592 ))
+soup.append(kernel(2,'+', lambda xy: xy[0] + xy[1]))
+soup.append(kernel(2,'-', lambda xy: xy[0] - xy[1]))
+soup.append(kernel(1,'sqr',  lambda xy: xy[0]**2))
+soup.append(kernel(1,'sqrt', lambda xy: math.sqrt(abs(xy[0]))))
+soup.append(kernel(4,'if_gt',lambda xy: xy[2] if xy[0] > xy[1] else xy[3]))
+soup.append(kernel(4,'if_le',lambda xy: xy[2] if xy[0] <= xy[1] else xy[3]))
+soup.append(kernel(0,'pi', lambda x: 3.141592 ))
 soup.append(kernel(1,'exp',lambda x: math.exp(34.0) if x[0] > 34.0 else math.exp(x[0])))
 soup.append(kernel(1,'ln', lambda x: 0 if x[0] <= 0.0 else math.log(x[0])))
-soup.append(kernel(1,'sin',lambda x:math.sin(x[0])))
-soup.append(kernel(1,'cos',lambda x:math.cos(x[0])))
+soup.append(kernel(1,'sin',lambda x: math.sin(x[0])))
+soup.append(kernel(1,'cos',lambda x: math.cos(x[0])))
 
 soup.addRandConst(10,-4.0,4.0)
 
@@ -171,7 +181,7 @@ target  = 3.0
 
 population = [Alife(soup,maxLevs) for i in range(popSize)]
 
-vals = [alife.spanNodeTree() for alife in population]
+vals = [alife.spanNodeTree([.99]) for alife in population]
 
 fitness = [math.fabs(vals[i]-target) for i in range(len(vals))]
 
